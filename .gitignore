@@ -1,0 +1,11 @@
+node_modules
+coverage
+coverage.json
+dict.json
+tx-calldata.json
+build
+artifacts
+cache
+solcinputs
+.idea
+.env
