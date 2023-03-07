@@ -47,5 +47,10 @@
         "lint:fix": "yarn lint:js:fix && yarn lint:sol:fix",
         "test": "hardhat test --parallel",
         "test:ci": "hardhat test"
-    }
+    },
+    "files": [
+        "./*.MD",
+        "contracts/*.sol",
+        "js/*.js"
+    ]
 }
