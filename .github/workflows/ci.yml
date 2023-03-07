@@ -18,7 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/setup
-      - run: yarn typechain
       - run: yarn test:ci
 
   coverage:
@@ -26,6 +25,5 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/setup
-      - run: yarn typechain
       - run: yarn coverage
       - uses: codecov/codecov-action@v3

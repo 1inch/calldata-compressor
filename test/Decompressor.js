@@ -55,7 +55,7 @@ describe('Decompressor', function () {
     };
 
     describe('Compress and decompress', function () {
-        it('calc compress', async function () {
+        it('calc compress @skip-on-coverage', async function () {
             const { addr1, decompressorExt, calldatas } = await loadFixture(initContractsAndLoadCalldatas);
 
             let counter = 0;
@@ -102,7 +102,7 @@ describe('Decompressor', function () {
             expect(ethers.utils.defaultAbiCoder.decode(['bytes'], decompressedCalldata)).to.deep.eq([calldata]);
         });
 
-        it('should decompress calldatas with all cases', async function () {
+        it('should decompress calldatas with all cases @skip-on-coverage', async function () {
             const { addr1, decompressorExt, calldatas } = await loadFixture(initContractsAndLoadCalldatas);
 
             let counter = 0;
