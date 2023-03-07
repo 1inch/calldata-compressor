@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
 const { expect, trim0x } = require('@1inch/solidity-utils');
-const { compress } = require('./helpers/compressor.js');
+const { compress } = require('../js/compressor.js');
 
 const CALLDATAS_LIMIT = 5;
 
