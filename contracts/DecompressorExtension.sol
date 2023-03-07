@@ -5,16 +5,37 @@ pragma abicoder v2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+/**
+ * @title DecompressorExtension
+ * @dev A contract that implements a decompression algorithm to be used in conjunction with compressed data.
+ */
 abstract contract DecompressorExtension is Ownable {
-    error TooSmallOffset();
+    /**
+     * @dev Emitted when an invalid offset is used.
+     * @param offset The invalid offset used in the function call.
+     */
+    error TooSmallOffset(uint256 offset);
 
+    /**
+     * @dev The dictionary mapping storage slots to their associated compressed data.
+     */
     bytes32[1_048_576] private _dict; // 20 bits
 
+    /**
+     * @dev Modifier to check that the offset used in a function call is valid. Offsets less 2 are reserved with `msg.sender`and `address(this)`
+     * @param offset The offset value to be checked.
+     */
     modifier validOffset(uint256 offset) {
-        if (offset < 2) revert TooSmallOffset();
+        if (offset < 2) revert TooSmallOffset(offset);
         _;
     }
 
+    /**
+     * @dev Returns the data stored in the dictionary in the specified range.
+     * @param begin The starting index of the data range to return. First 2 positions are reserved, so it should be greater than 1.
+     * @param end The ending index of the data range to return.
+     * @return res An array of bytes32 values containing the data in the specified range.
+     */
     function getData(uint256 begin, uint256 end) external view validOffset(begin) returns(bytes32[] memory res) {
         unchecked {
             if (begin < end) {
@@ -26,12 +47,22 @@ abstract contract DecompressorExtension is Ownable {
         }
     }
 
+    /**
+     * @dev Sets the data at the specified dictionary offset.
+     * @param offset The dictionary offset to set the data at. First 2 positions are reserved, so it should be greater than 1.
+     * @param data The data to be stored at the specified offset.
+     */
     function setData(uint256 offset, bytes32 data) external validOffset(offset) onlyOwner {
         unchecked {
             _dict[offset] = data;
         }
     }
 
+    /**
+     * @dev Sets an array of data starting at the specified dictionary offset.
+     * @param offset The starting dictionary offset to set the data at. First 2 positions are reserved, so it should be greater than 1.
+     * @param dataArray The array of data to be stored starting at the specified offset.
+     */
     function setDataArray(uint256 offset, bytes32[] calldata dataArray) external validOffset(offset) onlyOwner {
         unchecked {
             for (uint256 i = 0; i < dataArray.length; i++) {
@@ -40,15 +71,26 @@ abstract contract DecompressorExtension is Ownable {
         }
     }
 
-    // N bytes - compressed data
+    /**
+     * @dev Decompresses the compressed data (N bytes) passed to the function using the _delegatecall function.
+     */
     function decompress() external payable {
         _delegatecall(decompressed());
     }
 
+    /**
+     * @dev Calculates and returns the decompressed data from the compressed calldata.
+     * @return raw The decompressed raw data.
+     */
     function decompressed() public view returns(bytes memory raw) {
         return _decompressed(msg.data[4:]);
     }
 
+    /**
+     * @dev Calculates and returns the decompressed raw data from the compressed data passed as an argument.
+     * @param cd The compressed data to be decompressed.
+     * @return raw The decompressed raw data.
+     */
     function _decompressed(bytes calldata cd) internal view returns(bytes memory raw) {
         assembly {  // solhint-disable-line no-inline-assembly
             raw := mload(0x40)
@@ -129,6 +171,10 @@ abstract contract DecompressorExtension is Ownable {
         }
     }
 
+    /**
+     * @dev Executes a delegate call to the raw data calculated by the _decompressed function.
+     * @param raw The raw data to execute the delegate call with.
+     */
     function _delegatecall(bytes memory raw) internal {
         assembly {  // solhint-disable-line no-inline-assembly
             let success := delegatecall(gas(), address(), add(raw, 0x20), mload(raw), 0, 0)
