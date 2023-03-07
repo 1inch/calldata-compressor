@@ -98,7 +98,7 @@ It also has two methods:
 ### CompressData Class
 Represents the compressed data itself, along with its description and power. It has two properties:
 
-- `power`: `An instance of `CompressDataPower` representing the power of the compressed data.
+- `power`: An instance of `CompressDataPower` representing the power of the compressed data.
 - `description`: An instance of `CompressDataDescription` representing the description of how the data was compressed.
 
 ### Calldata Class
