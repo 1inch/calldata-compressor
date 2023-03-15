@@ -327,6 +327,7 @@ class Calldata {
         }
 
         return {
+            uncompressedData: '0x' + this.data,
             compressedData: this.zip(bestCompressForFirstNBytes[this.bytesInfo.length - 1].description),
             ...bestCompressForFirstNBytes[this.bytesInfo.length - 1],
         };

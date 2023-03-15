@@ -10,6 +10,13 @@ try {
     popularCalldatas = require('./dict.json');
 } catch (e) {}
 
+function calldataCost (calldata) {
+    const trimmed = trim0x(calldata);
+    const zeroBytesCount = trimmed.match(/.{2}/g).filter(x => x === '00').length;
+    const nonZeroBytesCount = trimmed.length / 2 - zeroBytesCount;
+    return zeroBytesCount * 4 + nonZeroBytesCount * 16;
+}
+
 describe('Decompressor', function () {
     async function initContracts () {
         const [addr1, addr2] = await ethers.getSigners();
@@ -231,61 +238,116 @@ describe('Decompressor', function () {
     });
 
     describe('Gas usage @skip-on-coverage', function () {
-        it('ERC20 transfer', async function () {
-            const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMint);
+        describe('Calldata cost', function () {
+            it('custom calldatas', async function () {
+                const { addr1, decompressorExt, calldatas } = await loadFixture(initContractsAndLoadCalldatas);
 
-            // regular erc20 transfer
-            const tx = await decompressorExt.transfer(addr2.address, ether('1'));
-            const regularGasUsed = (await tx.wait()).gasUsed;
+                let counter = 0;
+                for (const tx in calldatas) {
+                    const result = await compress(calldatas[tx], decompressorExt, addr1.address, popularCalldatas.length);
+                    const uncompressedCost = calldataCost(calldatas[tx]);
+                    const compressedCost = calldataCost(result.compressedData);
+                    console.log(`custom calldata uncompressedData ${uncompressedCost}, compressedData ${compressedCost}`);
+                    expect(uncompressedCost).to.gt(compressedCost);
 
-            // erc20 transfer with decompressor
-            const calldata = await generateCompressedCalldata(decompressorExt, 'transfer', [addr2.address, ether('1')], addr1);
-            const txWithDecompress = await addr1.sendTransaction({
-                to: decompressorExt.address,
-                data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
+                    if (counter++ === CALLDATAS_LIMIT) break;
+                }
             });
-            const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
-            console.log(`erc20 transfer regularGasUsed ${regularGasUsed}, decompressorGasUsed ${decompressorGasUsed}`);
-            expect(regularGasUsed).to.lt(decompressorGasUsed);
+
+            it('ERC20 transfer', async function () {
+                const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDict);
+                const calldata = await generateCompressedCalldata(decompressorExt, 'transfer', [addr2.address, ether('1')], addr1);
+                const uncompressedCost = calldataCost(calldata.uncompressedData);
+                const compressedCost = calldataCost(calldata.compressedData);
+                console.log(`erc20 transfer uncompressedData ${uncompressedCost}, compressedData ${compressedCost}`);
+                expect(uncompressedCost).to.gt(compressedCost);
+            });
+
+            it('ERC20 approve', async function () {
+                const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDict);
+                const calldata = await generateCompressedCalldata(decompressorExt, 'approve', [addr2.address, ether('1')], addr1);
+                const uncompressedCost = calldataCost(calldata.uncompressedData);
+                const compressedCost = calldataCost(calldata.compressedData);
+                console.log(`erc20 transfer uncompressedData ${uncompressedCost}, compressedData ${compressedCost}`);
+                expect(uncompressedCost).to.gt(compressedCost);
+            });
+
+            it('ERC20 transferFrom', async function () {
+                const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDict);
+                const calldata = await generateCompressedCalldata(decompressorExt, 'transferFrom', [addr2.address, addr1.address, ether('1')], addr1);
+                const uncompressedCost = calldataCost(calldata.uncompressedData);
+                const compressedCost = calldataCost(calldata.compressedData);
+                console.log(`erc20 transfer uncompressedData ${uncompressedCost}, compressedData ${compressedCost}`);
+                expect(uncompressedCost).to.gt(compressedCost);
+            });
         });
 
-        it('ERC20 approve', async function () {
-            const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMint);
+        describe('Runtime cost', function () {
+            it('ERC20 transfer', async function () {
+                const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMint);
 
-            // warmup allowance
-            await decompressorExt.approve(addr2.address, ether('1'));
+                // regular erc20 transfer
+                const tx = await decompressorExt.transfer(addr2.address, ether('1'));
+                const regularGasUsed = (await tx.wait()).gasUsed;
 
-            // regular erc20 approve
-            const tx = await decompressorExt.approve(addr2.address, ether('1'));
-            const regularGasUsed = (await tx.wait()).gasUsed;
+                // erc20 transfer with decompressor
+                const calldata = await generateCompressedCalldata(decompressorExt, 'transfer', [addr2.address, ether('1')], addr1);
+                const txWithDecompress = await addr1.sendTransaction({
+                    to: decompressorExt.address,
+                    data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
+                });
+                const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
 
-            // erc20 approve with decompressor
-            const calldata = await generateCompressedCalldata(decompressorExt, 'approve', [addr2.address, ether('1')], addr1);
-            const txWithDecompress = await addr1.sendTransaction({
-                to: decompressorExt.address,
-                data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
+                const regularRuntime = regularGasUsed - 21000 - calldataCost(calldata.uncompressedData);
+                const decompressorRuntime = decompressorGasUsed - 21000 - calldataCost(calldata.compressedData);
+                console.log(`erc20 transfer regularRuntime ${regularRuntime}, decompressorRuntime ${decompressorRuntime}`);
+                expect(regularRuntime).to.lt(decompressorRuntime);
             });
-            const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
-            console.log(`erc20 approve regularGasUsed ${regularGasUsed}, decompressorGasUsed ${decompressorGasUsed}`);
-            expect(regularGasUsed).to.lt(decompressorGasUsed);
-        });
 
-        it('ERC20 transferFrom', async function () {
-            const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMintAndApprove);
+            it('ERC20 approve', async function () {
+                const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMint);
 
-            // regular erc20 transferFrom
-            const tx = await decompressorExt.transferFrom(addr2.address, addr1.address, ether('1'));
-            const regularGasUsed = (await tx.wait()).gasUsed;
+                // warmup allowance
+                await decompressorExt.approve(addr2.address, ether('1'));
 
-            // erc20 transferFrom with decompressor
-            const calldata = await generateCompressedCalldata(decompressorExt, 'transferFrom', [addr2.address, addr1.address, ether('1')], addr1);
-            const txWithDecompress = await addr1.sendTransaction({
-                to: decompressorExt.address,
-                data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
+                // regular erc20 approve
+                const tx = await decompressorExt.approve(addr2.address, ether('1'));
+                const regularGasUsed = (await tx.wait()).gasUsed;
+
+                // erc20 approve with decompressor
+                const calldata = await generateCompressedCalldata(decompressorExt, 'approve', [addr2.address, ether('1')], addr1);
+                const txWithDecompress = await addr1.sendTransaction({
+                    to: decompressorExt.address,
+                    data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
+                });
+                const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
+
+                const regularRuntime = regularGasUsed - 21000 - calldataCost(calldata.uncompressedData);
+                const decompressorRuntime = decompressorGasUsed - 21000 - calldataCost(calldata.compressedData);
+                console.log(`erc20 approve regularRuntime ${regularRuntime}, decompressorRuntime ${decompressorRuntime}`);
+                expect(regularRuntime).to.lt(decompressorRuntime);
             });
-            const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
-            console.log(`erc20 transferFrom regularGasUsed ${regularGasUsed}, decompressorGasUsed ${decompressorGasUsed}`);
-            expect(regularGasUsed).to.lt(decompressorGasUsed);
+
+            it('ERC20 transferFrom', async function () {
+                const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMintAndApprove);
+
+                // regular erc20 transferFrom
+                const tx = await decompressorExt.transferFrom(addr2.address, addr1.address, ether('1'));
+                const regularGasUsed = (await tx.wait()).gasUsed;
+
+                // erc20 transferFrom with decompressor
+                const calldata = await generateCompressedCalldata(decompressorExt, 'transferFrom', [addr2.address, addr1.address, ether('1')], addr1);
+                const txWithDecompress = await addr1.sendTransaction({
+                    to: decompressorExt.address,
+                    data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
+                });
+                const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
+
+                const regularRuntime = regularGasUsed - 21000 - calldataCost(calldata.uncompressedData);
+                const decompressorRuntime = decompressorGasUsed - 21000 - calldataCost(calldata.compressedData);
+                console.log(`erc20 transferFrom regularRuntime ${regularRuntime}, decompressorRuntime ${decompressorRuntime}`);
+                expect(regularRuntime).to.lt(decompressorRuntime);
+            });
         });
     });
 });
