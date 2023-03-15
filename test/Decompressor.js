@@ -247,7 +247,7 @@ describe('Decompressor', function () {
                     const result = await compress(calldatas[tx], decompressorExt, addr1.address, popularCalldatas.length);
                     const uncompressedCost = calldataCost(calldatas[tx]);
                     const compressedCost = calldataCost(result.compressedData);
-                    console.log(`custom calldata uncompressedData ${uncompressedCost}, compressedData ${compressedCost}`);
+                    console.log(`custom calldata #${counter + 1} uncompressedData ${uncompressedCost}, compressedData ${compressedCost}`);
                     expect(uncompressedCost).to.gt(compressedCost);
 
                     if (counter++ === CALLDATAS_LIMIT) break;
@@ -268,7 +268,7 @@ describe('Decompressor', function () {
                 const calldata = await generateCompressedCalldata(decompressorExt, 'approve', [addr2.address, ether('1')], addr1);
                 const uncompressedCost = calldataCost(calldata.uncompressedData);
                 const compressedCost = calldataCost(calldata.compressedData);
-                console.log(`erc20 transfer uncompressedData ${uncompressedCost}, compressedData ${compressedCost}`);
+                console.log(`erc20 approve uncompressedData ${uncompressedCost}, compressedData ${compressedCost}`);
                 expect(uncompressedCost).to.gt(compressedCost);
             });
 
@@ -277,12 +277,29 @@ describe('Decompressor', function () {
                 const calldata = await generateCompressedCalldata(decompressorExt, 'transferFrom', [addr2.address, addr1.address, ether('1')], addr1);
                 const uncompressedCost = calldataCost(calldata.uncompressedData);
                 const compressedCost = calldataCost(calldata.compressedData);
-                console.log(`erc20 transfer uncompressedData ${uncompressedCost}, compressedData ${compressedCost}`);
+                console.log(`erc20 transferFrom uncompressedData ${uncompressedCost}, compressedData ${compressedCost}`);
                 expect(uncompressedCost).to.gt(compressedCost);
             });
         });
 
         describe('Runtime cost', function () {
+            it('custom calldatas', async function () {
+                const { addr1, decompressorExt, calldatas } = await loadFixture(initContractsAndLoadCalldatas);
+
+                let counter = 0;
+                for (const tx in calldatas) {
+                    const calldata = await compress(calldatas[tx], decompressorExt, addr1.address, popularCalldatas.length);
+                    const txWithDecompress = await addr1.sendTransaction({
+                        to: decompressorExt.address,
+                        data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
+                    });
+                    const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
+                    const decompressorRuntime = decompressorGasUsed - 21000 - calldataCost(calldata.compressedData);
+                    console.log(`custom calldata #${counter + 1} decompressorRuntime ${decompressorRuntime}`, calldata.power);
+                    if (counter++ === CALLDATAS_LIMIT) break;
+                }
+            });
+
             it('ERC20 transfer', async function () {
                 const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMint);
 
@@ -300,7 +317,7 @@ describe('Decompressor', function () {
 
                 const regularRuntime = regularGasUsed - 21000 - calldataCost(calldata.uncompressedData);
                 const decompressorRuntime = decompressorGasUsed - 21000 - calldataCost(calldata.compressedData);
-                console.log(`erc20 transfer regularRuntime ${regularRuntime}, decompressorRuntime ${decompressorRuntime}`);
+                console.log(`erc20 transfer decompressorRuntime ${decompressorRuntime - regularRuntime}`, calldata.power);
                 expect(regularRuntime).to.lt(decompressorRuntime);
             });
 
@@ -324,7 +341,7 @@ describe('Decompressor', function () {
 
                 const regularRuntime = regularGasUsed - 21000 - calldataCost(calldata.uncompressedData);
                 const decompressorRuntime = decompressorGasUsed - 21000 - calldataCost(calldata.compressedData);
-                console.log(`erc20 approve regularRuntime ${regularRuntime}, decompressorRuntime ${decompressorRuntime}`);
+                console.log(`erc20 approve decompressorRuntime ${decompressorRuntime - regularRuntime}`, calldata.power);
                 expect(regularRuntime).to.lt(decompressorRuntime);
             });
 
@@ -345,7 +362,7 @@ describe('Decompressor', function () {
 
                 const regularRuntime = regularGasUsed - 21000 - calldataCost(calldata.uncompressedData);
                 const decompressorRuntime = decompressorGasUsed - 21000 - calldataCost(calldata.compressedData);
-                console.log(`erc20 transferFrom regularRuntime ${regularRuntime}, decompressorRuntime ${decompressorRuntime}`);
+                console.log(`erc20 transferFrom decompressorRuntime ${decompressorRuntime - regularRuntime}`, calldata.power);
                 expect(regularRuntime).to.lt(decompressorRuntime);
             });
         });

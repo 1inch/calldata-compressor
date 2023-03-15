@@ -9,4 +9,7 @@ import "../DecompressorExtension.sol";
 contract DecompressorExtensionMock is TokenMock, DecompressorExtension {
     // solhint-disable-next-line no-empty-blocks
     constructor(string memory name, string memory symbol) TokenMock(name, symbol) {}
+
+    // solhint-disable-next-line no-empty-blocks
+    fallback () external payable {}
 }
