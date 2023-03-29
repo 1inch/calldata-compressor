@@ -86,7 +86,7 @@ describe('Decompressor', function () {
 
     describe('Compress and decompress', function () {
         it('calc compress', async function () {
-            if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip() }
+            if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip(); }
             const { addr1, decompressorExt, calldatas } = await loadFixture(initContractsAndLoadCalldatas);
 
             let counter = 0;
@@ -134,7 +134,7 @@ describe('Decompressor', function () {
         });
 
         it('should decompress calldatas with all cases', async function () {
-            if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip() }
+            if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip(); }
             const { addr1, decompressorExt, calldatas } = await loadFixture(initContractsAndLoadCalldatas);
 
             let counter = 0;
@@ -241,9 +241,12 @@ describe('Decompressor', function () {
     });
 
     describe('Gas usage', function () {
+        before(function () {
+            if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip(); }
+        });
+
         describe('Calldata cost', function () {
             it('custom calldatas', async function () {
-                if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip() }
                 const { addr1, decompressorExt, calldatas } = await loadFixture(initContractsAndLoadCalldatas);
 
                 let counter = 0;
@@ -259,7 +262,6 @@ describe('Decompressor', function () {
             });
 
             it('ERC20 transfer', async function () {
-                if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip() }
                 const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDict);
                 const calldata = await generateCompressedCalldata(decompressorExt, 'transfer', [addr2.address, ether('1')], addr1);
                 const uncompressedCost = calldataCost(calldata.uncompressedData);
@@ -269,7 +271,6 @@ describe('Decompressor', function () {
             });
 
             it('ERC20 approve', async function () {
-                if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip() }
                 const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDict);
                 const calldata = await generateCompressedCalldata(decompressorExt, 'approve', [addr2.address, ether('1')], addr1);
                 const uncompressedCost = calldataCost(calldata.uncompressedData);
@@ -279,7 +280,6 @@ describe('Decompressor', function () {
             });
 
             it('ERC20 transferFrom', async function () {
-                if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip() }
                 const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDict);
                 const calldata = await generateCompressedCalldata(decompressorExt, 'transferFrom', [addr2.address, addr1.address, ether('1')], addr1);
                 const uncompressedCost = calldataCost(calldata.uncompressedData);
@@ -291,7 +291,6 @@ describe('Decompressor', function () {
 
         describe('Runtime cost', function () {
             it('custom calldatas', async function () {
-                if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip() }
                 const { addr1, decompressorExt, calldatas } = await loadFixture(initContractsAndLoadCalldatas);
 
                 let counter = 0;
@@ -309,7 +308,6 @@ describe('Decompressor', function () {
             });
 
             it('ERC20 transfer', async function () {
-                if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip() }
                 const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMint);
 
                 // regular erc20 transfer
@@ -331,7 +329,6 @@ describe('Decompressor', function () {
             });
 
             it('ERC20 approve', async function () {
-                if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip() }
                 const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMint);
 
                 // warmup allowance
@@ -356,7 +353,6 @@ describe('Decompressor', function () {
             });
 
             it('ERC20 transferFrom', async function () {
-                if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip() }
                 const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMintAndApprove);
 
                 // regular erc20 transferFrom
