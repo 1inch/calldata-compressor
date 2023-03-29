@@ -1,4 +1,5 @@
-const { ethers } = require('hardhat');
+const hre = require('hardhat');
+const { ethers } = hre;
 const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
 const { ether, expect, trim0x } = require('@1inch/solidity-utils');
 const { compress } = require('../js/compressor.js');
@@ -84,7 +85,8 @@ describe('Decompressor', function () {
     }
 
     describe('Compress and decompress', function () {
-        it('calc compress @skip-on-coverage', async function () {
+        it('calc compress', async function () {
+            if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip(); }
             const { addr1, decompressorExt, calldatas } = await loadFixture(initContractsAndLoadCalldatas);
 
             let counter = 0;
@@ -131,7 +133,8 @@ describe('Decompressor', function () {
             expect(ethers.utils.defaultAbiCoder.decode(['bytes'], decompressedCalldata)).to.deep.eq([calldata]);
         });
 
-        it('should decompress calldatas with all cases @skip-on-coverage', async function () {
+        it('should decompress calldatas with all cases', async function () {
+            if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip(); }
             const { addr1, decompressorExt, calldatas } = await loadFixture(initContractsAndLoadCalldatas);
 
             let counter = 0;
@@ -237,7 +240,11 @@ describe('Decompressor', function () {
         });
     });
 
-    describe('Gas usage @skip-on-coverage', function () {
+    describe('Gas usage', function () {
+        before(function () {
+            if (hre.__SOLIDITY_COVERAGE_RUNNING) { this.skip(); }
+        });
+
         describe('Calldata cost', function () {
             it('custom calldatas', async function () {
                 const { addr1, decompressorExt, calldatas } = await loadFixture(initContractsAndLoadCalldatas);

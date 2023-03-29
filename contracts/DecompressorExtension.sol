@@ -92,7 +92,7 @@ abstract contract DecompressorExtension is Ownable {
      * @return raw The decompressed raw data.
      */
     function _decompressed(bytes calldata cd) internal view returns(bytes memory raw) {
-        assembly {  // solhint-disable-line no-inline-assembly
+        assembly ("memory-safe") {  // solhint-disable-line no-inline-assembly
             raw := mload(0x40)
             let outptr := add(raw, 0x20)
             let end := add(cd.offset, cd.length)
@@ -176,7 +176,7 @@ abstract contract DecompressorExtension is Ownable {
      * @param raw The raw data to execute the delegate call with.
      */
     function _delegatecall(bytes memory raw) internal {
-        assembly {  // solhint-disable-line no-inline-assembly
+        assembly ("memory-safe") {  // solhint-disable-line no-inline-assembly
             let success := delegatecall(gas(), address(), add(raw, 0x20), mload(raw), 0, 0)
             returndatacopy(0, 0, returndatasize())
             if success {
