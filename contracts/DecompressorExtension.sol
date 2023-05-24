@@ -52,7 +52,7 @@ abstract contract DecompressorExtension is Ownable {
      * @param offset The dictionary offset to set the data at. First 2 positions are reserved, so it should be greater than 1.
      * @param data The data to be stored at the specified offset.
      */
-    function setData(uint256 offset, bytes32 data) external validOffset(offset) onlyOwner {
+    function setData(uint256 offset, bytes32 data) public virtual validOffset(offset) {
         unchecked {
             _dict[offset] = data;
         }
@@ -63,7 +63,7 @@ abstract contract DecompressorExtension is Ownable {
      * @param offset The starting dictionary offset to set the data at. First 2 positions are reserved, so it should be greater than 1.
      * @param dataArray The array of data to be stored starting at the specified offset.
      */
-    function setDataArray(uint256 offset, bytes32[] calldata dataArray) external validOffset(offset) onlyOwner {
+    function setDataArray(uint256 offset, bytes32[] calldata dataArray) public virtual validOffset(offset) {
         unchecked {
             for (uint256 i = 0; i < dataArray.length; i++) {
                 _dict[offset + i] = dataArray[i];

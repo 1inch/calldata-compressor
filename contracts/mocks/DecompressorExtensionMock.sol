@@ -12,4 +12,12 @@ contract DecompressorExtensionMock is TokenMock, DecompressorExtension {
 
     // solhint-disable-next-line no-empty-blocks
     fallback () external payable {}
+
+    function setData(uint256 offset, bytes32 data) public override onlyOwner {
+        super.setData(offset, data);
+    }
+
+    function setDataArray(uint256 offset, bytes32[] calldata dataArray) public override onlyOwner {
+        super.setDataArray(offset, dataArray);
+    }
 }
