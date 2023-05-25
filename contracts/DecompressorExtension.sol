@@ -16,17 +16,20 @@ abstract contract DecompressorExtension is Ownable {
      */
     error TooSmallOffset(uint256 offset);
 
+    uint256 constant public MAX_DICT_LEN = 1_048_576; // 2 ** 20
+    uint256 constant public RESERVE_DICT_LEN = 2; // 0: msg.sender; 1: address(this)
+
     /**
      * @dev The dictionary mapping storage slots to their associated compressed data.
      */
-    bytes32[1_048_576] private _dict; // 20 bits
+    bytes32[MAX_DICT_LEN] private _dict;
 
     /**
-     * @dev Modifier to check that the offset used in a function call is valid. Offsets less 2 are reserved with `msg.sender`and `address(this)`
+     * @dev Modifier to check that the offset used in a function call is valid. Offsets less `RESERVE_DICT_LEN` are reserved
      * @param offset The offset value to be checked.
      */
     modifier validOffset(uint256 offset) {
-        if (offset < 2) revert TooSmallOffset(offset);
+        if (offset < RESERVE_DICT_LEN) revert TooSmallOffset(offset);
         _;
     }
 
