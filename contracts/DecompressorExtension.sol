@@ -3,13 +3,12 @@
 pragma solidity ^0.8.15;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-
 /**
  * @title DecompressorExtension
  * @dev A contract that implements a decompression algorithm to be used in conjunction with compressed data.
+ * You should implement in your contract a function that makes use of the internal methods `_setData`, `_setDataArray` for data addition to the dictionary.
  */
-abstract contract DecompressorExtension is Ownable {
+abstract contract DecompressorExtension {
     /**
      * @dev Emitted when an invalid offset is used.
      * @param offset The invalid offset used in the function call.
@@ -55,7 +54,7 @@ abstract contract DecompressorExtension is Ownable {
      * @param offset The dictionary offset to set the data at. First 2 positions are reserved, so it should be greater than 1.
      * @param data The data to be stored at the specified offset.
      */
-    function setData(uint256 offset, bytes32 data) public virtual validOffset(offset) {
+    function _setData(uint256 offset, bytes32 data) internal validOffset(offset) {
         unchecked {
             _dict[offset] = data;
         }
@@ -66,7 +65,7 @@ abstract contract DecompressorExtension is Ownable {
      * @param offset The starting dictionary offset to set the data at. First 2 positions are reserved, so it should be greater than 1.
      * @param dataArray The array of data to be stored starting at the specified offset.
      */
-    function setDataArray(uint256 offset, bytes32[] calldata dataArray) public virtual validOffset(offset) {
+    function _setDataArray(uint256 offset, bytes32[] calldata dataArray) internal validOffset(offset) {
         unchecked {
             for (uint256 i = 0; i < dataArray.length; i++) {
                 _dict[offset + i] = dataArray[i];
