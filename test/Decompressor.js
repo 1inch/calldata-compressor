@@ -153,7 +153,7 @@ describe('Decompressor', function () {
     describe('Setup _dict', function () {
         it('shouldn\'t set data to reserved offset in dict', async function () {
             const { decompressorExt } = await loadFixture(initContracts);
-            await expect(decompressorExt.setData(0, ethers.utils.hexZeroPad('0x01', 32))).to.be.revertedWithCustomError(decompressorExt, 'TooSmallOffset');
+            await expect(decompressorExt.setData(0, ethers.utils.hexZeroPad('0x01', 32))).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
         });
 
         it('shouldn\'t set data array to reserved offset in dict', async function () {
@@ -163,13 +163,29 @@ describe('Decompressor', function () {
                 ethers.utils.hexZeroPad('0x02', 32),
                 ethers.utils.hexZeroPad('0x03', 32),
             ];
-            await expect(decompressorExt.setDataArray(0, dict)).to.be.revertedWithCustomError(decompressorExt, 'TooSmallOffset');
+            await expect(decompressorExt.setDataArray(0, dict)).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
         });
 
         it('shouldn\'t get data from reserved offset in dict', async function () {
             const { decompressorExt } = await loadFixture(initContracts);
-            await expect(decompressorExt.getData(0, 2)).to.be.revertedWithCustomError(decompressorExt, 'TooSmallOffset');
-            await expect(decompressorExt.getData(1, 2)).to.be.revertedWithCustomError(decompressorExt, 'TooSmallOffset');
+            await expect(decompressorExt.getData(0, 2)).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
+            await expect(decompressorExt.getData(1, 2)).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
+        });
+
+        it('shouldn\'t set data beyond the size of the dict.', async function () {
+            const { decompressorExt } = await loadFixture(initContracts);
+            await expect(decompressorExt.setData(await decompressorExt.MAX_DICT_LEN(), ethers.utils.hexZeroPad('0x01', 32))).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
+        });
+
+        it('shouldn\'t set data array beyond the size of the dict.', async function () {
+            const { decompressorExt } = await loadFixture(initContracts);
+            const dict = [
+                ethers.utils.hexZeroPad('0x01', 32),
+                ethers.utils.hexZeroPad('0x02', 32),
+                ethers.utils.hexZeroPad('0x03', 32),
+            ];
+            const maxDictLen = await decompressorExt.MAX_DICT_LEN();
+            await expect(decompressorExt.setDataArray(maxDictLen - 1, dict)).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
         });
 
         it('should set data to dict and get it', async function () {

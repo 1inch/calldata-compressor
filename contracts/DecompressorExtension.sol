@@ -10,10 +10,10 @@ pragma abicoder v2;
  */
 abstract contract DecompressorExtension {
     /**
-     * @dev Emitted when an invalid offset is used.
-     * @param offset The invalid offset used in the function call.
+     * @dev Emitted when an offset is used incorrectly, either because it is too small, or because its sum with a dict data's length exceeds a certain limit.
+     * @param value The incorrect value used as an offset or as the sum of the offset and a dict data's length.
      */
-    error TooSmallOffset(uint256 offset);
+    error IncorrectDictAccess(uint256 value);
 
     uint256 constant public MAX_DICT_LEN = 1_048_576; // 2 ** 20
     uint256 constant public RESERVE_DICT_LEN = 2; // 0: msg.sender; 1: address(this)
@@ -24,11 +24,11 @@ abstract contract DecompressorExtension {
     bytes32[MAX_DICT_LEN] private _dict;
 
     /**
-     * @dev Modifier to check that the offset used in a function call is valid. Offsets less `RESERVE_DICT_LEN` are reserved
-     * @param offset The offset value to be checked.
+     * @dev Ensures the provided value is correctly used as an offset. This includes checks for the offset being too small or its sum with an dict data's length exceeding a certain limit. Value less `RESERVE_DICT_LEN` are reserved.
+     * @param value The value used as an offset or as the sum of the offset and an array's length.
      */
-    modifier validOffset(uint256 offset) {
-        if (offset < RESERVE_DICT_LEN) revert TooSmallOffset(offset);
+    modifier validDictAccess(uint256 value) {
+        if (value < RESERVE_DICT_LEN || value >= MAX_DICT_LEN) revert IncorrectDictAccess(value);
         _;
     }
 
@@ -38,7 +38,7 @@ abstract contract DecompressorExtension {
      * @param end The ending index of the data range to return.
      * @return res An array of bytes32 values containing the data in the specified range.
      */
-    function getData(uint256 begin, uint256 end) external view validOffset(begin) returns(bytes32[] memory res) {
+    function getData(uint256 begin, uint256 end) external view validDictAccess(begin) validDictAccess(end) returns(bytes32[] memory res) {
         unchecked {
             if (begin < end) {
                 res = new bytes32[](end - begin);
@@ -54,7 +54,7 @@ abstract contract DecompressorExtension {
      * @param offset The dictionary offset to set the data at. First 2 positions are reserved, so it should be greater than 1.
      * @param data The data to be stored at the specified offset.
      */
-    function _setData(uint256 offset, bytes32 data) internal validOffset(offset) {
+    function _setData(uint256 offset, bytes32 data) internal validDictAccess(offset) {
         unchecked {
             _dict[offset] = data;
         }
@@ -65,7 +65,7 @@ abstract contract DecompressorExtension {
      * @param offset The starting dictionary offset to set the data at. First 2 positions are reserved, so it should be greater than 1.
      * @param dataArray The array of data to be stored starting at the specified offset.
      */
-    function _setDataArray(uint256 offset, bytes32[] calldata dataArray) internal validOffset(offset) {
+    function _setDataArray(uint256 offset, bytes32[] calldata dataArray) internal validDictAccess(offset) validDictAccess(offset + dataArray.length) {
         unchecked {
             for (uint256 i = 0; i < dataArray.length; i++) {
                 _dict[offset + i] = dataArray[i];
@@ -188,3 +188,4 @@ abstract contract DecompressorExtension {
         }
     }
 }
+
