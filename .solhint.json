@@ -4,7 +4,7 @@
         "not-rely-on-time": "off",
         "compiler-version": [
             "error",
-            "0.8.15"
+            "^0.8.0"
         ],
         "private-vars-leading-underscore": "error",
         "func-visibility": [
