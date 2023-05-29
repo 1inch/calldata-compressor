@@ -341,11 +341,11 @@ class Calldata {
         return this.data.slice(2 * start, 2 * (start + n));
     }
 
-    async initDict (amount, wallet) {
+    async initDict (size, wallet) {
         this.dict = [
             ethers.utils.hexZeroPad(wallet.toLowerCase(), 32),
             ethers.utils.hexZeroPad(this.contract.address.toLowerCase(), 32),
-            ...await this.contract.getData(2, amount),
+            ...await this.contract.getData(2, 2 + size),
         ];
         this.lookup = {};
         for (let i = 0; i < this.dict.length; i++) {
@@ -404,9 +404,9 @@ class Calldata {
     }
 }
 
-async function compress (calldata, decompressorExt, wallet, initDictAmount = 1000) {
+async function compress (calldata, decompressorExt, wallet, initDictSize = 1000) {
     const calldataObj = new Calldata(calldata, decompressorExt);
-    await calldataObj.initDict(initDictAmount, wallet);
+    await calldataObj.initDict(initDictSize, wallet);
     return calldataObj.compress();
 }
 
