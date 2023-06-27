@@ -343,8 +343,8 @@ class Calldata {
 
     async initDict (size, wallet) {
         this.dict = [
-            ethers.utils.hexZeroPad(wallet.toLowerCase(), 32),
-            ethers.utils.hexZeroPad(this.contract.address.toLowerCase(), 32),
+            ethers.zeroPadValue(wallet.toLowerCase(), 32),
+            ethers.zeroPadValue((await this.contract.getAddress()).toLowerCase(), 32),
             ...await this.contract.getData(2, 2 + size),
         ];
         this.lookup = {};
