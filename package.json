@@ -1,6 +1,6 @@
 {
     "name": "@1inch/calldata-compressor",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "1inch calldata compressor",
     "repository": {
         "type": "git",
