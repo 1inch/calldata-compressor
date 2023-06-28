@@ -15,7 +15,7 @@ function calldataCost (calldata) {
     const trimmed = trim0x(calldata);
     const zeroBytesCount = trimmed.match(/.{2}/g).filter(x => x === '00').length;
     const nonZeroBytesCount = trimmed.length / 2 - zeroBytesCount;
-    return zeroBytesCount * 4 + nonZeroBytesCount * 16;
+    return BigInt(zeroBytesCount * 4 + nonZeroBytesCount * 16);
 }
 
 describe('Decompressor', function () {
@@ -317,7 +317,7 @@ describe('Decompressor', function () {
                         data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
                     });
                     const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
-                    const decompressorRuntime = decompressorGasUsed - 21000n - BigInt(calldataCost(calldata.compressedData));
+                    const decompressorRuntime = decompressorGasUsed - 21000n - calldataCost(calldata.compressedData);
                     console.log(`custom calldata #${counter + 1} decompressorRuntime ${decompressorRuntime}`, calldata.power);
                     if (counter++ === CALLDATAS_LIMIT) break;
                 }
@@ -338,8 +338,8 @@ describe('Decompressor', function () {
                 });
                 const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
 
-                const regularRuntime = regularGasUsed - 21000n - BigInt(calldataCost(calldata.uncompressedData));
-                const decompressorRuntime = decompressorGasUsed - 21000n - BigInt(calldataCost(calldata.compressedData));
+                const regularRuntime = regularGasUsed - 21000n - calldataCost(calldata.uncompressedData);
+                const decompressorRuntime = decompressorGasUsed - 21000n - calldataCost(calldata.compressedData);
                 console.log(`erc20 transfer decompressorRuntime ${decompressorRuntime - regularRuntime}`, calldata.power);
                 expect(regularRuntime).to.lt(decompressorRuntime);
             });
@@ -362,8 +362,8 @@ describe('Decompressor', function () {
                 });
                 const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
 
-                const regularRuntime = regularGasUsed - 21000n - BigInt(calldataCost(calldata.uncompressedData));
-                const decompressorRuntime = decompressorGasUsed - 21000n - BigInt(calldataCost(calldata.compressedData));
+                const regularRuntime = regularGasUsed - 21000n - calldataCost(calldata.uncompressedData);
+                const decompressorRuntime = decompressorGasUsed - 21000n - calldataCost(calldata.compressedData);
                 console.log(`erc20 approve decompressorRuntime ${decompressorRuntime - regularRuntime}`, calldata.power);
                 expect(regularRuntime).to.lt(decompressorRuntime);
             });
@@ -383,8 +383,8 @@ describe('Decompressor', function () {
                 });
                 const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
 
-                const regularRuntime = regularGasUsed - 21000n - BigInt(calldataCost(calldata.uncompressedData));
-                const decompressorRuntime = decompressorGasUsed - 21000n - BigInt(calldataCost(calldata.compressedData));
+                const regularRuntime = regularGasUsed - 21000n - calldataCost(calldata.uncompressedData);
+                const decompressorRuntime = decompressorGasUsed - 21000n - calldataCost(calldata.compressedData);
                 console.log(`erc20 transferFrom decompressorRuntime ${decompressorRuntime - regularRuntime}`, calldata.power);
                 expect(regularRuntime).to.lt(decompressorRuntime);
             });
