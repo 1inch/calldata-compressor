@@ -26,9 +26,6 @@ module.exports = {
         enabled: true,
         currency: 'USD',
     },
-    typechain: {
-        target: 'ethers-v5',
-    },
     tracer: {
         enableAllOpcodes: true,
     },
