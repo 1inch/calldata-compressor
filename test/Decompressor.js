@@ -15,7 +15,7 @@ function calldataCost (calldata) {
     const trimmed = trim0x(calldata);
     const zeroBytesCount = trimmed.match(/.{2}/g).filter(x => x === '00').length;
     const nonZeroBytesCount = trimmed.length / 2 - zeroBytesCount;
-    return zeroBytesCount * 4 + nonZeroBytesCount * 16;
+    return BigInt(zeroBytesCount * 4 + nonZeroBytesCount * 16);
 }
 
 describe('Decompressor', function () {
@@ -25,7 +25,7 @@ describe('Decompressor', function () {
 
         const DecompressorExtMock = await ethers.getContractFactory('DecompressorExtensionMock');
         const decompressorExt = await DecompressorExtMock.deploy('TokenWithDecompressor', 'TWD');
-        await decompressorExt.deployed();
+        await decompressorExt.waitForDeployment();
 
         return { addr1, addr2, decompressorExt, chainId };
     };
@@ -39,7 +39,7 @@ describe('Decompressor', function () {
                 popularCalldatas.splice(i, 1);
                 i--;
             }
-            popularCalldatas[i] = ethers.utils.hexZeroPad(popularCalldatas[i], 32);
+            popularCalldatas[i] = ethers.zeroPadValue(popularCalldatas[i], 32);
         }
         const partIndex = Math.ceil(popularCalldatas.length / dataParts);
         for (let i = 0; i < partIndex; i++) {
@@ -65,8 +65,8 @@ describe('Decompressor', function () {
     async function initContractsWithDictAndMint () {
         const { addr1, addr2, decompressorExt, chainId } = await initContractsWithDict();
 
-        await decompressorExt.mint(addr1.address, ether('1000'));
-        await decompressorExt.mint(addr2.address, ether('1000'));
+        await decompressorExt.mint(addr1, ether('1000'));
+        await decompressorExt.mint(addr2, ether('1000'));
 
         return { addr1, addr2, decompressorExt, chainId };
     }
@@ -74,7 +74,7 @@ describe('Decompressor', function () {
     async function initContractsWithDictAndMintAndApprove () {
         const { addr1, addr2, decompressorExt, chainId } = await initContractsWithDictAndMint();
 
-        await decompressorExt.connect(addr2).approve(addr1.address, ether('1000'));
+        await decompressorExt.connect(addr2).approve(addr1, ether('1000'));
 
         return { addr1, addr2, decompressorExt, chainId };
     }
@@ -105,10 +105,10 @@ describe('Decompressor', function () {
         it('should decompress without calldata', async function () {
             const { decompressorExt } = await loadFixture(initContractsWithDict);
             const decompressedCalldata = await ethers.provider.call({
-                to: decompressorExt.address,
+                to: decompressorExt,
                 data: decompressorExt.interface.encodeFunctionData('decompressed'),
             });
-            expect(ethers.utils.defaultAbiCoder.decode(['bytes'], decompressedCalldata)).to.deep.eq(['0x']);
+            expect(ethers.AbiCoder.defaultAbiCoder().decode(['bytes'], decompressedCalldata)).to.deep.eq(['0x']);
         });
 
         it('should decompress zero bytes', async function () {
@@ -116,10 +116,10 @@ describe('Decompressor', function () {
             const calldata = '0x00000000';
             const result = await compress(calldata, decompressorExt, addr1.address, popularCalldatas.length);
             const decompressedCalldata = await ethers.provider.call({
-                to: decompressorExt.address,
+                to: decompressorExt,
                 data: decompressorExt.interface.encodeFunctionData('decompressed') + trim0x(result.compressedData),
             });
-            expect(ethers.utils.defaultAbiCoder.decode(['bytes'], decompressedCalldata)).to.deep.eq([calldata]);
+            expect(ethers.AbiCoder.defaultAbiCoder().decode(['bytes'], decompressedCalldata)).to.deep.eq([calldata]);
         });
 
         it('should decompress random bytes', async function () {
@@ -127,10 +127,10 @@ describe('Decompressor', function () {
             const calldata = '0xabaabbcc0102';
             const result = await compress(calldata, decompressorExt, addr1.address, popularCalldatas.length);
             const decompressedCalldata = await ethers.provider.call({
-                to: decompressorExt.address,
+                to: decompressorExt,
                 data: decompressorExt.interface.encodeFunctionData('decompressed') + trim0x(result.compressedData),
             });
-            expect(ethers.utils.defaultAbiCoder.decode(['bytes'], decompressedCalldata)).to.deep.eq([calldata]);
+            expect(ethers.AbiCoder.defaultAbiCoder().decode(['bytes'], decompressedCalldata)).to.deep.eq([calldata]);
         });
 
         it('should decompress calldatas with all cases', async function () {
@@ -141,10 +141,10 @@ describe('Decompressor', function () {
             for (const tx in calldatas) {
                 const result = await compress(calldatas[tx], decompressorExt, addr1.address, popularCalldatas.length);
                 const decompressedCalldata = await ethers.provider.call({
-                    to: decompressorExt.address,
+                    to: decompressorExt,
                     data: decompressorExt.interface.encodeFunctionData('decompressed') + trim0x(result.compressedData),
                 });
-                expect(ethers.utils.defaultAbiCoder.decode(['bytes'], decompressedCalldata)).to.deep.eq([calldatas[tx]]);
+                expect(ethers.AbiCoder.defaultAbiCoder().decode(['bytes'], decompressedCalldata)).to.deep.eq([calldatas[tx]]);
                 if (counter++ === CALLDATAS_LIMIT) break;
             }
         });
@@ -153,15 +153,15 @@ describe('Decompressor', function () {
     describe('Setup _dict', function () {
         it('shouldn\'t set data to reserved offset in dict', async function () {
             const { decompressorExt } = await loadFixture(initContracts);
-            await expect(decompressorExt.setData(0, ethers.utils.hexZeroPad('0x01', 32))).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
+            await expect(decompressorExt.setData(0, ethers.zeroPadValue('0x01', 32))).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
         });
 
         it('shouldn\'t set data array to reserved offset in dict', async function () {
             const { decompressorExt } = await loadFixture(initContracts);
             const dict = [
-                ethers.utils.hexZeroPad('0x01', 32),
-                ethers.utils.hexZeroPad('0x02', 32),
-                ethers.utils.hexZeroPad('0x03', 32),
+                ethers.zeroPadValue('0x01', 32),
+                ethers.zeroPadValue('0x02', 32),
+                ethers.zeroPadValue('0x03', 32),
             ];
             await expect(decompressorExt.setDataArray(0, dict)).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
         });
@@ -174,32 +174,32 @@ describe('Decompressor', function () {
 
         it('shouldn\'t set data beyond the size of the dict.', async function () {
             const { decompressorExt } = await loadFixture(initContracts);
-            await expect(decompressorExt.setData(await decompressorExt.MAX_DICT_LEN(), ethers.utils.hexZeroPad('0x01', 32))).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
+            await expect(decompressorExt.setData(await decompressorExt.MAX_DICT_LEN(), ethers.zeroPadValue('0x01', 32))).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
         });
 
         it('shouldn\'t set data array beyond the size of the dict.', async function () {
             const { decompressorExt } = await loadFixture(initContracts);
             const dict = [
-                ethers.utils.hexZeroPad('0x01', 32),
-                ethers.utils.hexZeroPad('0x02', 32),
-                ethers.utils.hexZeroPad('0x03', 32),
+                ethers.zeroPadValue('0x01', 32),
+                ethers.zeroPadValue('0x02', 32),
+                ethers.zeroPadValue('0x03', 32),
             ];
             const maxDictLen = await decompressorExt.MAX_DICT_LEN();
-            await expect(decompressorExt.setDataArray(maxDictLen - 1, dict)).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
+            await expect(decompressorExt.setDataArray(maxDictLen - 1n, dict)).to.be.revertedWithCustomError(decompressorExt, 'IncorrectDictAccess');
         });
 
         it('should set data to dict and get it', async function () {
             const { decompressorExt } = await loadFixture(initContracts);
-            await decompressorExt.setData(2, ethers.utils.hexZeroPad('0x01', 32));
+            await decompressorExt.setData(2, ethers.zeroPadValue('0x01', 32));
             expect(await decompressorExt.getData(2, 3)).to.deep.equal(['0x0000000000000000000000000000000000000000000000000000000000000001']);
         });
 
         it('should set data array to dict and get it', async function () {
             const { decompressorExt } = await loadFixture(initContracts);
             const dict = [
-                ethers.utils.hexZeroPad('0x01', 32),
-                ethers.utils.hexZeroPad('0x02', 32),
-                ethers.utils.hexZeroPad('0x03', 32),
+                ethers.zeroPadValue('0x01', 32),
+                ethers.zeroPadValue('0x02', 32),
+                ethers.zeroPadValue('0x03', 32),
             ];
             await decompressorExt.setDataArray(2, dict);
             expect(await decompressorExt.getData(2, 5)).to.deep.equal(dict);
@@ -218,7 +218,7 @@ describe('Decompressor', function () {
             const calldata = await generateCompressedCalldata(decompressorExt, 'transfer', [addr2.address, ether('1')], addr1);
             await expect(
                 addr1.sendTransaction({
-                    to: decompressorExt.address,
+                    to: decompressorExt,
                     data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
                 }),
             ).to.changeTokenBalances(
@@ -233,10 +233,10 @@ describe('Decompressor', function () {
 
             const calldata = await generateCompressedCalldata(decompressorExt, 'approve', [addr2.address, ether('1')], addr1);
             await addr1.sendTransaction({
-                to: decompressorExt.address,
+                to: decompressorExt,
                 data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
             });
-            expect(await decompressorExt.allowance(addr1.address, addr2.address)).to.equal(ether('1'));
+            expect(await decompressorExt.allowance(addr1, addr2)).to.equal(ether('1'));
         });
 
         it('ERC20 transferFrom via decompressor', async function () {
@@ -245,7 +245,7 @@ describe('Decompressor', function () {
             const calldata = await generateCompressedCalldata(decompressorExt, 'transferFrom', [addr2.address, addr1.address, ether('1')], addr1);
             await expect(
                 addr1.sendTransaction({
-                    to: decompressorExt.address,
+                    to: decompressorExt,
                     data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
                 }),
             ).to.changeTokenBalances(
@@ -313,11 +313,11 @@ describe('Decompressor', function () {
                 for (const tx in calldatas) {
                     const calldata = await compress(calldatas[tx], decompressorExt, addr1.address, popularCalldatas.length);
                     const txWithDecompress = await addr1.sendTransaction({
-                        to: decompressorExt.address,
+                        to: decompressorExt,
                         data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
                     });
                     const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
-                    const decompressorRuntime = decompressorGasUsed - 21000 - calldataCost(calldata.compressedData);
+                    const decompressorRuntime = decompressorGasUsed - 21000n - calldataCost(calldata.compressedData);
                     console.log(`custom calldata #${counter + 1} decompressorRuntime ${decompressorRuntime}`, calldata.power);
                     if (counter++ === CALLDATAS_LIMIT) break;
                 }
@@ -327,19 +327,19 @@ describe('Decompressor', function () {
                 const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMint);
 
                 // regular erc20 transfer
-                const tx = await decompressorExt.transfer(addr2.address, ether('1'));
+                const tx = await decompressorExt.transfer(addr2, ether('1'));
                 const regularGasUsed = (await tx.wait()).gasUsed;
 
                 // erc20 transfer with decompressor
                 const calldata = await generateCompressedCalldata(decompressorExt, 'transfer', [addr2.address, ether('1')], addr1);
                 const txWithDecompress = await addr1.sendTransaction({
-                    to: decompressorExt.address,
+                    to: decompressorExt,
                     data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
                 });
                 const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
 
-                const regularRuntime = regularGasUsed - 21000 - calldataCost(calldata.uncompressedData);
-                const decompressorRuntime = decompressorGasUsed - 21000 - calldataCost(calldata.compressedData);
+                const regularRuntime = regularGasUsed - 21000n - calldataCost(calldata.uncompressedData);
+                const decompressorRuntime = decompressorGasUsed - 21000n - calldataCost(calldata.compressedData);
                 console.log(`erc20 transfer decompressorRuntime ${decompressorRuntime - regularRuntime}`, calldata.power);
                 expect(regularRuntime).to.lt(decompressorRuntime);
             });
@@ -348,22 +348,22 @@ describe('Decompressor', function () {
                 const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMint);
 
                 // warmup allowance
-                await decompressorExt.approve(addr2.address, ether('1'));
+                await decompressorExt.approve(addr2, ether('1'));
 
                 // regular erc20 approve
-                const tx = await decompressorExt.approve(addr2.address, ether('1'));
+                const tx = await decompressorExt.approve(addr2, ether('1'));
                 const regularGasUsed = (await tx.wait()).gasUsed;
 
                 // erc20 approve with decompressor
                 const calldata = await generateCompressedCalldata(decompressorExt, 'approve', [addr2.address, ether('1')], addr1);
                 const txWithDecompress = await addr1.sendTransaction({
-                    to: decompressorExt.address,
+                    to: decompressorExt,
                     data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
                 });
                 const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
 
-                const regularRuntime = regularGasUsed - 21000 - calldataCost(calldata.uncompressedData);
-                const decompressorRuntime = decompressorGasUsed - 21000 - calldataCost(calldata.compressedData);
+                const regularRuntime = regularGasUsed - 21000n - calldataCost(calldata.uncompressedData);
+                const decompressorRuntime = decompressorGasUsed - 21000n - calldataCost(calldata.compressedData);
                 console.log(`erc20 approve decompressorRuntime ${decompressorRuntime - regularRuntime}`, calldata.power);
                 expect(regularRuntime).to.lt(decompressorRuntime);
             });
@@ -372,19 +372,19 @@ describe('Decompressor', function () {
                 const { addr1, addr2, decompressorExt } = await loadFixture(initContractsWithDictAndMintAndApprove);
 
                 // regular erc20 transferFrom
-                const tx = await decompressorExt.transferFrom(addr2.address, addr1.address, ether('1'));
+                const tx = await decompressorExt.transferFrom(addr2, addr1, ether('1'));
                 const regularGasUsed = (await tx.wait()).gasUsed;
 
                 // erc20 transferFrom with decompressor
                 const calldata = await generateCompressedCalldata(decompressorExt, 'transferFrom', [addr2.address, addr1.address, ether('1')], addr1);
                 const txWithDecompress = await addr1.sendTransaction({
-                    to: decompressorExt.address,
+                    to: decompressorExt,
                     data: decompressorExt.interface.encodeFunctionData('decompress') + trim0x(calldata.compressedData),
                 });
                 const decompressorGasUsed = (await txWithDecompress.wait()).gasUsed;
 
-                const regularRuntime = regularGasUsed - 21000 - calldataCost(calldata.uncompressedData);
-                const decompressorRuntime = decompressorGasUsed - 21000 - calldataCost(calldata.compressedData);
+                const regularRuntime = regularGasUsed - 21000n - calldataCost(calldata.uncompressedData);
+                const decompressorRuntime = decompressorGasUsed - 21000n - calldataCost(calldata.compressedData);
                 console.log(`erc20 transferFrom decompressorRuntime ${decompressorRuntime - regularRuntime}`, calldata.power);
                 expect(regularRuntime).to.lt(decompressorRuntime);
             });
