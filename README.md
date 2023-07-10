@@ -65,7 +65,7 @@ const { compress } = require('@1inch/calldata-compressor/js/compressor.js');
 
 ### Description of `compress` function
 
-You have to fill dictionary, which you want to use in compress/decompress processes, using some functions `_setDataArray` or `_setData` methods before use `compress` method. If you do not do this, then the compression will be without taking into account the dictionary.
+You have to fill dictionary, which you want to use in compress/decompress processes, using some functions with `_setDataArray` or `_setData` methods before use `compress` method. If you do not do this, then the compression will be without taking into account the dictionary.
 This is an asynchronous function that takes four parameters:
 
 1. `calldata` - This parameter is expected to contain some data that needs to be compressed.
