@@ -29,13 +29,13 @@ It's algorithm for compress data. It's checks all cases with bitmasks from Decom
 It calculates all the possible applications of different masks for each byte of the code, and then iterates over all the options using dynamic programming and chooses the best option.
 
 ## Contract Overview
-This contract provides a `DecompressorExtension` abstract contract that extends `Ownable` from the OpenZeppelin library. It decompresses compressed calldata. It contains the following functions:
+This contract provides a `DecompressorExtension` abstract contract that decompresses compressed calldata. It contains the following functions:
 
 - `getData`: retrieves data from the contract's dictionary and returns it in an array.
-- `setData`: sets a single value in the contract's dictionary.
-- `setDataArray`: sets multiple values in the contract's dictionary.
 - `decompress`: decompresses data stored in the contract using a compression algorithm.
 - `decompressed`: returns the decompressed data as bytes.
+- `_setData`: sets a single value in the contract's dictionary.
+- `_setDataArray`: sets multiple values in the contract's dictionary.
 
 ### Usage
 To use this contract, you must create a new contract that inherits from `DecompressorExtension`.
@@ -44,19 +44,17 @@ To use this contract, you must create a new contract that inherits from `Decompr
 To use the `getData` function, call it with a beginning and ending index, which will return an array of data values from the dictionary.
 First 2 positions are reserved with `msg.sender`and `address(this)`, so you can't get it.
 
-#### `setData`
-To use the `setData` function, call it with an offset and a value. This function can only be called by the owner of the contract.
-First 2 positions are reserved with `msg.sender`and `address(this)`, so you can't set it.
-
-#### `setDataArray`
-To use the `setDataArray` function, call it with an offset and an array of values. This function can only be called by the owner of the contract.
-First 2 positions are reserved with `msg.sender`and `address(this)`, so you can't set it.
-
 #### `decompress`
 To use the `decompress` function, send a transaction to the contract with compressed data as input. This function will delegate call the `decompressed` function, which returns the decompressed data as bytes.
 
 #### `decompressed`
 To use the `decompressed` function, call it directly. This function returns the decompressed data as bytes.
+
+#### `_setData`
+The `_setData` is an internal function used within the contract or its inheritors. It sets a value in the dictionary at a specified offset, excluding the first two reserved slots for `msg.sender` and `address(this)`.
+
+#### `_setDataArray`
+The `_setDataArray` is an internal function used within the contract or its inheritors. It's used to set an array of values in the dictionary starting from a specified offset. The first two slots, reserved for `msg.sender` and `address(this)`, are excluded from this operation.
 
 ## JS Compress script
 
@@ -67,7 +65,7 @@ const { compress } = require('@1inch/calldata-compressor/js/compressor.js');
 
 ### Description of `compress` function
 
-You have to fill dictionary, which you want to use in compress/decompress processes, using `setDataArray` or `setData` methods before use `compress` method. If you do not do this, then the compression will be without taking into account the dictionary.
+You have to fill dictionary, which you want to use in compress/decompress processes, using some functions `_setDataArray` or `_setData` methods before use `compress` method. If you do not do this, then the compression will be without taking into account the dictionary.
 This is an asynchronous function that takes four parameters:
 
 1. `calldata` - This parameter is expected to contain some data that needs to be compressed.
