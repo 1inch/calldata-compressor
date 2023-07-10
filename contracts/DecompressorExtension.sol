@@ -6,6 +6,7 @@ pragma solidity ^0.8.0;
  * @title DecompressorExtension
  * @dev A contract that implements a decompression algorithm to be used in conjunction with compressed data.
  * You should implement in your contract a function that makes use of the internal methods `_setData`, `_setDataArray` for data addition to the dictionary.
+ * NOTE: It is important to implement a delay when using the `_setData` and `_setDataArray` methods in your transactions. This delay helps to guard against the possibility of frontrunning, which can occur when the state of the dictionary changes during the execution of a transaction.
  */
 abstract contract DecompressorExtension {
     /**
