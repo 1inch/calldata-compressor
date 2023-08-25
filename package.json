@@ -1,6 +1,6 @@
 {
     "name": "@1inch/calldata-compressor",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "1inch calldata compressor",
     "repository": {
         "type": "git",
@@ -8,31 +8,31 @@
     },
     "license": "MIT",
     "dependencies": {
-        "@openzeppelin/contracts": "4.9.0"
+        "@openzeppelin/contracts": "4.9.2"
     },
     "devDependencies": {
-        "@1inch/solidity-utils": "2.3.0",
+        "@1inch/solidity-utils": "3.0.1",
         "@nomicfoundation/hardhat-chai-matchers": "2.0.1",
-        "@nomicfoundation/hardhat-ethers": "3.0.2",
+        "@nomicfoundation/hardhat-ethers": "3.0.4",
         "@nomicfoundation/hardhat-network-helpers": "1.0.8",
-        "@nomicfoundation/hardhat-verify": "1.0.2",
+        "@nomicfoundation/hardhat-verify": "1.0.4",
         "chai": "4.3.7",
-        "dotenv": "16.0.3",
-        "eslint": "8.41.0",
-        "eslint-config-standard": "17.0.0",
+        "dotenv": "16.3.1",
+        "eslint": "8.45.0",
+        "eslint-config-standard": "17.1.0",
         "eslint-plugin-import": "2.27.5",
-        "eslint-plugin-n": "16.0.0",
+        "eslint-plugin-n": "16.0.1",
         "eslint-plugin-promise": "6.1.1",
-        "ethers": "6.6.2",
-        "hardhat": "2.16.0",
+        "ethers": "6.6.5",
+        "hardhat": "2.17.0",
         "hardhat-dependency-compiler": "1.1.3",
-        "hardhat-deploy": "0.11.30",
+        "hardhat-deploy": "0.11.34",
         "hardhat-gas-reporter": "1.0.9",
-        "hardhat-tracer": "2.5.0",
+        "hardhat-tracer": "2.5.1",
         "rimraf": "5.0.1",
-        "solc": "0.8.19",
+        "solc": "0.8.21",
         "solhint": "3.4.1",
-        "solidity-coverage": "0.8.3"
+        "solidity-coverage": "0.8.4"
     },
     "scripts": {
         "clean": "rimraf artifacts cache coverage contracts/hardhat-dependency-compiler",
