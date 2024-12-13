@@ -131,7 +131,12 @@ You can find examples of `dict` and `calldatas` in IPFS:
 | `dict.json`  | Qmb4fEEdQe9QB4ChBFK8bJVkefCjG4nB91hgQ2kcKsKGWK  |
 | `tx-calldata.json`  | QmQnjk5MKMiC6jZNjWgXKkbCMFFznNYaHRsS281jV94wpe  |
 
-Just add this files to `./test` dir
+Just add this files to `./test` dir.
+
+Also these files are stored using Git LFS. If they are not pulled by default, you can download them with the following command:
+```
+git lfs pull
+```
 
 ## License
 This contract is licensed under the MIT license, as indicated by the SPDX-License-Identifier.
