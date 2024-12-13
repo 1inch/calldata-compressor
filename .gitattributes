@@ -1,1 +1,3 @@
 *.sol linguist-language=Solidity
+test/dict.json filter=lfs diff=lfs merge=lfs
+test/tx-calldata.json filter=lfs diff=lfs merge=lfs

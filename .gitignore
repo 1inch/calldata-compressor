@@ -2,8 +2,6 @@ node_modules
 coverage
 hardhat-dependency-compiler
 coverage.json
-dict.json
-tx-calldata.json
 build
 artifacts
 cache
